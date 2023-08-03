@@ -1,11 +1,18 @@
 import requests
 from datetime import datetime
 from flask import Flask, jsonify
-from config import etherscan_api_key
+from config import etherscan_api_key, es_username, es_password
 from elasticsearch import Elasticsearch
 
 
 app = Flask(__name__)
+
+
+es_endpoint = "https://my-deployment-30c341.kb.us-central1.gcp.cloud.es.io:9243"
+
+# Create an Elasticsearch client
+es = Elasticsearch([es_endpoint], basic_auth=(es_username, es_password))
+print(es.ping)
 
 
 def get_eth_to_usd_exchange_rate():
@@ -63,6 +70,20 @@ def convert_timestamp_to_date(timestamp):
         return "Invalid timestamp"
 
 
+def save_the_data_in_es_db(gas_fee_data):
+    index_name = "gas_fee_data_index"
+    template_name = "gas_fee_data_template"
+
+    # Create the index template if it doesn't exist
+    if not es.indices.exists_template(name=template_name):
+        # Create the index template
+        es.indices.create(index=index_name, ignore=400)
+
+    # Index the gas fee data into Elasticsearch
+    for transaction in gas_fee_data:
+        es.index(index=index_name, body=transaction)
+
+
 @app.route('/eth_to_usd')
 def eth_to_usd():
     eth_to_usd_rate = get_eth_to_usd_exchange_rate()
@@ -80,15 +101,20 @@ def calc_gas_fee_data():
     eth_to_usd_rate = get_eth_to_usd_exchange_rate()
     gas_fee_data = get_gas_fee_data(contract, api_key)
 
+    # I take only the last 1000 transactions in order to display the chart nicely and not too crowded
+    transactions = gas_fee_data['result'][-1000:]
+
     if gas_fee_data and gas_fee_data.get("status") == "1":
         gas_fee_list = []
-        for transaction in gas_fee_data.get("result"):
+        for transaction in transactions:
             gas_price_wei = int(transaction.get("gasPrice"))
             gas_price_eth = gas_price_wei / 10**18  # Convert gas price from Wei to ETH
             gas_fee_usd = gas_price_eth * eth_to_usd_rate  # Convert gas price from Ether to USD
             date = convert_timestamp_to_date(int(transaction['timeStamp']))
 
             gas_fee_list.append({'date': date, 'gas_fee_usd': f"{gas_fee_usd:.8f}"})
+
+        # save_the_data_in_es_db(gas_fee_list)  # Save the data into Elasticsearch DB
 
         return jsonify({'gas_fee_data': gas_fee_list})
     else:
