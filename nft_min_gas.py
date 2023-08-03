@@ -2,6 +2,7 @@ import requests
 from datetime import datetime
 from flask import Flask, jsonify
 from config import etherscan_api_key
+from elasticsearch import Elasticsearch
 
 
 app = Flask(__name__)
