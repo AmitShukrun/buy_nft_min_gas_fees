@@ -1,6 +1,6 @@
 import requests
 from datetime import datetime
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from config import etherscan_api_key, es_username, es_password
 from elasticsearch import Elasticsearch
 
@@ -118,9 +118,10 @@ def calc_gas_fee_data():
 
             gas_fee_list.append({'date': date, 'gas_fee_usd': f"{gas_fee_usd:.8f}"})
 
-        save_the_data_in_es_db(gas_fee_list)  # Save the data into Elasticsearch DB
+        # save_the_data_in_es_db(gas_fee_list)  # Save the data into Elasticsearch DB
 
-        return jsonify({'gas_fee_data': gas_fee_list})
+        return render_template('gas_fee_chart.html', gas_fee_list=gas_fee_list)
+
     else:
         return jsonify({'error': 'Failed to fetch gas fee data or API key is invalid.'}), 500
 

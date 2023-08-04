@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <script src="https://code.highcharts.com/highcharts.js"></script>
+     <meta charset="UTF-8">
+     <title>Gas Fee NFTs</title>
+</head>
+<body>
+     <div id="gasFeeChartContainer"></div>
+
+     <script>
+         // Sample gas_fee_list data in JavaScript format
+         const gasFeeData = [
+             {% for entry in gas_fee_list %}
+                 {
+                     "date": "{{ entry.date }}",
+                     "gas_fee_usd": {{ entry.gas_fee_usd }}
+                 }{% if not loop.last %},{% endif %}
+             {% endfor %}
+         ];
+
+         // Extract dates and gas_fee_values from gasFeeData
+         const dates = gasFeeData.map(entry => entry.date);
+         const gas_fee_values = gasFeeData.map(entry => parseFloat(entry.gas_fee_usd));
+
+         Highcharts.chart('gasFeeChartContainer', {
+             chart: {
+                 type: 'line'
+             },
+             title: {
+                 text: 'Gas Fee Data'
+             },
+             xAxis: {
+                 categories: dates,
+                 labels: {
+                     rotation: -45,
+                     style: {
+                         fontSize: '13px',
+                         fontFamily: 'Verdana, sans-serif'
+                     }
+                 }
+             },
+             yAxis: {
+                 title: {
+                     text: 'Gas Fee (USD)'
+                 }
+             },
+             legend: {
+                 enabled: false
+             },
+             series: [{
+                 name: 'Gas Fee (USD)',
+                 data: gas_fee_values
+             }]
+         });
+     </script>
+</body>
+</html>
