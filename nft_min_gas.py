@@ -11,8 +11,13 @@ app = Flask(__name__)
 es_endpoint = "https://my-deployment-30c341.kb.us-central1.gcp.cloud.es.io:9243"
 
 # Create an Elasticsearch client
-es = Elasticsearch([es_endpoint], basic_auth=(es_username, es_password))
-print(es.ping)
+es = Elasticsearch([es_endpoint], basic_auth=(es_username, es_password), verify_certs=True)
+
+# Check if the connection is successful
+if es.ping():
+    print("Connected to Elasticsearch successfully.")
+
+print(es.ping())
 
 
 def get_eth_to_usd_exchange_rate():
@@ -72,12 +77,11 @@ def convert_timestamp_to_date(timestamp):
 
 def save_the_data_in_es_db(gas_fee_data):
     index_name = "gas_fee_data_index"
-    template_name = "gas_fee_data_template"
 
-    # Create the index template if it doesn't exist
-    if not es.indices.exists_template(name=template_name):
-        # Create the index template
-        es.indices.create(index=index_name, ignore=400)
+    # Create the index if it doesn't exist
+    if not es.indices.exists(index=index_name):
+        # Create the index
+        es.indices.create(index=index_name)
 
     # Index the gas fee data into Elasticsearch
     for transaction in gas_fee_data:
@@ -114,7 +118,7 @@ def calc_gas_fee_data():
 
             gas_fee_list.append({'date': date, 'gas_fee_usd': f"{gas_fee_usd:.8f}"})
 
-        # save_the_data_in_es_db(gas_fee_list)  # Save the data into Elasticsearch DB
+        save_the_data_in_es_db(gas_fee_list)  # Save the data into Elasticsearch DB
 
         return jsonify({'gas_fee_data': gas_fee_list})
     else:
