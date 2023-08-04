@@ -22,8 +22,15 @@ CryptoPunks is a non-fungible token (NFT) collection on the Ethereum blockchain,
 
 `   python nft_min_gas.py
 `
+
+<br>
+
+### Then run the next endpoint and wait a few seconds for the result
+    
+     http://127.0.0.1:5000/calc_gas_fee_data
     
 
+<br>
 
 ### Walk Through
 
