@@ -1,8 +1,9 @@
 import requests
 from datetime import datetime
 from flask import Flask, jsonify, render_template
-from config import etherscan_api_key, es_username, es_password
+from config import etherscan_api_key, es_api_key, es_cloud_id
 from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
 
 
 app = Flask(__name__)
@@ -10,14 +11,13 @@ app = Flask(__name__)
 
 es_endpoint = "https://my-deployment-30c341.kb.us-central1.gcp.cloud.es.io:9243"
 
-# Create an Elasticsearch client
-es = Elasticsearch([es_endpoint], basic_auth=(es_username, es_password), verify_certs=True)
+# Creating an Elasticsearch client
+es = Elasticsearch(cloud_id=es_cloud_id, api_key=es_api_key)
+
 
 # Check if the connection is successful
 if es.ping():
     print("Connected to Elasticsearch successfully.")
-
-print(es.ping())
 
 
 def get_eth_to_usd_exchange_rate():
@@ -78,14 +78,16 @@ def convert_timestamp_to_date(timestamp):
 def save_the_data_in_es_db(gas_fee_data):
     index_name = "gas_fee_data_index"
 
-    # Create the index if it doesn't exist
+    # We'll create the index if it does not exist
     if not es.indices.exists(index=index_name):
         # Create the index
         es.indices.create(index=index_name)
 
-    # Index the gas fee data into Elasticsearch
-    for transaction in gas_fee_data:
-        es.index(index=index_name, body=transaction)
+        # Prepare bulk data
+        bulk_data = [{"_index": index_name, "_source": transaction} for transaction in gas_fee_data]
+
+        # Index the gas fee data into Elasticsearch in one operation
+        bulk(es, bulk_data)
 
 
 @app.route('/eth_to_usd')
@@ -118,7 +120,7 @@ def calc_gas_fee_data():
 
             gas_fee_list.append({'date': date, 'gas_fee_usd': f"{gas_fee_usd:.8f}"})
 
-        # save_the_data_in_es_db(gas_fee_list)  # Save the data into Elasticsearch DB
+        save_the_data_in_es_db(gas_fee_list)  # Save the data into Elasticsearch DB
 
         return render_template('gas_fee_chart.html', gas_fee_list=gas_fee_list)
 
