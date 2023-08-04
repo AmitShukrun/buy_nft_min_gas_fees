@@ -31,7 +31,7 @@ CryptoPunks is a non-fungible token (NFT) collection on the Ethereum blockchain,
 
 ```sh
 ├── templates
-│   ├── gas_fee_chart.html
+│   └── gas_fee_chart.html
 │
 ├── config.py
 ├── nft_min_gas.py
@@ -44,5 +44,5 @@ CryptoPunks is a non-fungible token (NFT) collection on the Ethereum blockchain,
 ### Final Project
 
 
-
+![](/images/gif_plot_graph.gif)
 
