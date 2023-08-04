@@ -9,8 +9,6 @@ from elasticsearch.helpers import bulk
 app = Flask(__name__)
 
 
-es_endpoint = "https://my-deployment-30c341.kb.us-central1.gcp.cloud.es.io:9243"
-
 # Creating an Elasticsearch client
 es = Elasticsearch(cloud_id=es_cloud_id, api_key=es_api_key)
 
@@ -86,12 +84,14 @@ def save_the_data_in_es_db(gas_fee_data):
         # Prepare bulk data
         bulk_data = [{"_index": index_name, "_source": transaction} for transaction in gas_fee_data]
 
-        # Index the gas fee data into Elasticsearch in one operation
+        # Index the gas fee data into Elasticsearch
         bulk(es, bulk_data)
 
 
 @app.route('/eth_to_usd')
 def eth_to_usd():
+    """ This function returns the current ETH to USD exchange rate """
+
     eth_to_usd_rate = get_eth_to_usd_exchange_rate()
     if eth_to_usd_rate:
         return jsonify({'exchange_rate': eth_to_usd_rate})
